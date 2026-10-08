@@ -1,0 +1,49 @@
+name: Veille concours féminins IDF
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    # Exécution quotidienne à 08:00 UTC
+    # = 09:00 en hiver / 10:00 en été en France
+    - cron: "0 8 * * *"
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  veille:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installer les dépendances
+        run: |
+          pip install -r requirements.txt
+
+      - name: Lancer la veille
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python bot.py
+
+      - name: Enregistrer l'historique
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add mandats_vus.json
+
+          git diff --cached --quiet || git commit -m "Mise à jour de l'historique des mandats"
+
+          git push
