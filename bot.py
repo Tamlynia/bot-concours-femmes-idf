@@ -6,6 +6,8 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from pypdf import PdfReader
 from io import BytesIO
+import smtplib
+from email.message import EmailMessage
 
 # ============================================================
 # BOT DE VEILLE - CONCOURS FEMININS TIR A L'ARC - ILE-DE-FRANCE
@@ -223,7 +225,53 @@ def creer_issue(titre, contenu):
 # ------------------------------------------------------------
 # PROGRAMME PRINCIPAL
 # ------------------------------------------------------------
+def envoyer_email(titre, contenu):
+    smtp_user = os.environ.get("SMTP_USER")
+    smtp_password = os.environ.get("SMTP_PASSWORD")
+    email_to = os.environ.get("EMAIL_TO")
 
+    if not smtp_user or not smtp_password or not email_to:
+        print("ERREUR : paramètres e-mail manquants.")
+        return False
+
+    destinataires = [
+        adresse.strip()
+        for adresse in email_to.split(",")
+        if adresse.strip()
+    ]
+
+    if not destinataires:
+        print("ERREUR : aucun destinataire e-mail.")
+        return False
+
+    message = EmailMessage()
+    message["From"] = smtp_user
+    message["To"] = ", ".join(destinataires)
+    message["Subject"] = f"🏹 {titre}"
+
+    message.set_content(
+        f"""Bonjour,
+
+Un nouveau concours féminin de tir à l'arc a été détecté en Île-de-France.
+
+{contenu}
+
+---
+Veille automatique des concours féminins IDF
+"""
+    )
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as serveur:
+            serveur.login(smtp_user, smtp_password)
+            serveur.send_message(message)
+
+        print(f"E-mail envoyé à {len(destinataires)} destinataire(s).")
+        return True
+
+    except Exception as e:
+        print(f"ERREUR lors de l'envoi de l'e-mail : {e}")
+        return False
 def main():
 
     historique = charger_historique()
@@ -292,7 +340,7 @@ Calendrier du Comité Régional Île-de-France :
 Bot de veille des concours féminins IDF
 """
 
-            creer_issue(titre, contenu)
+            envoyer_email(titre, contenu)
 
     sauvegarder_historique(historique)
 
