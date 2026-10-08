@@ -334,7 +334,7 @@ de tir à l'arc en Île-de-France vient d'être détecté.
 Calendrier du Comité Régional Île-de-France :
 
 {CALENDRIER_URL}
-
+ 
 ---
 
 Bot de veille des concours féminins IDF
